@@ -1,0 +1,72 @@
+name: CI - build & push docker image
+
+# Переиспользуется во всех 4 лабораторных работах без изменений
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest tests/ -v --junitxml=test-results.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.xml
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+
+      - name: Set short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push model-api image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:${{ steps.vars.outputs.sha_short }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:latest
+
+      - name: Build and push consumer image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.consumer
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab-consumer:${{ steps.vars.outputs.sha_short }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab-consumer:latest
+
+      - name: Generate dev_sec_ops.yml metadata
+        run: |
+          git log -5 --pretty=format:'  - "%h %s"' > last_commits.txt
+          echo "Собранный образ: ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:${{ steps.vars.outputs.sha_short }}"
+          cat last_commits.txt

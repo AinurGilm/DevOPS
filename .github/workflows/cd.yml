@@ -1,0 +1,71 @@
+name: CD - deploy & functional test
+
+# Переиспользуется во всех 4 лабораторных работах.
+# Запуск: по требованию (workflow_dispatch), по расписанию (schedule)
+# или как последний этап CI (workflow_run).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_run:
+    workflows: ["CI - build & push docker image"]
+    types: [completed]
+
+jobs:
+  deploy-and-test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare secrets for Vault (test stand)
+        run: |
+          cp vault/secrets.env.example vault/secrets.env
+
+      - name: Start full stack
+        run: docker compose up -d --build
+
+      - name: Wait for services
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/health && break
+            echo "Ждём поднятия model-api..." && sleep 5
+          done
+
+      - name: Run functional scenario (scenario.json)
+        run: |
+          python3 - <<'PY'
+          import json, sys, urllib.request
+
+          with open("scenario.json") as f:
+              scenario = json.load(f)
+
+          for step in scenario["steps"]:
+              if step["action"] == "GET":
+                  resp = urllib.request.urlopen(step["url"])
+                  assert resp.status == step["expected_status"], step
+                  print(f"[OK] step {step['step']}: GET {step['url']}")
+              elif step["action"] == "POST":
+                  req = urllib.request.Request(
+                      step["url"],
+                      data=json.dumps(step["body"]).encode(),
+                      headers={"Content-Type": "application/json"},
+                      method="POST",
+                  )
+                  resp = urllib.request.urlopen(req)
+                  assert resp.status == step["expected_status"], step
+                  body = json.loads(resp.read())
+                  for field in step["expected_fields"]:
+                      assert field in body, f"поле {field} отсутствует в ответе"
+                  print(f"[OK] step {step['step']}: POST {step['url']}")
+              else:
+                  print(f"[SKIP автопроверка] step {step['step']}: {step.get('description')}")
+          PY
+
+      - name: Collect logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

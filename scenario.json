@@ -1,0 +1,44 @@
+{
+  "name": "functional-smoke-test",
+  "description": "Сценарий функционального тестирования запущенного стека (CD pipeline)",
+  "steps": [
+    {
+      "step": 1,
+      "action": "GET",
+      "url": "http://localhost:8000/health",
+      "expected_status": 200,
+      "expected_body": { "status": "ok" }
+    },
+    {
+      "step": 2,
+      "action": "POST",
+      "url": "http://localhost:8000/predict",
+      "body": { "features": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] },
+      "expected_status": 200,
+      "expected_fields": ["prediction", "probability", "id"]
+    },
+    {
+      "step": 3,
+      "description": "Проверка, что результат записан в PostgreSQL",
+      "action": "SQL",
+      "query": "SELECT COUNT(*) FROM predictions;",
+      "expected": "count >= 1"
+    },
+    {
+      "step": 4,
+      "description": "Проверка, что секреты БД лежат в Vault, а не в коде",
+      "action": "VAULT_READ",
+      "path": "secret/data/db-credentials",
+      "expected": "200 OK, содержит host/user/password"
+    },
+    {
+      "step": 5,
+      "description": "Проверка, что Consumer получил сообщение из Kafka",
+      "action": "LOG_CHECK",
+      "container": "consumer",
+      "expected_log_contains": "Получен результат предсказания"
+    }
+  ]
+}

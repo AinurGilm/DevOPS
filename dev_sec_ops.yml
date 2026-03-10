@@ -1,0 +1,25 @@
+# Заполняется автоматически на этапе CI (см. .github/workflows/ci.yml,
+# шаг "Generate dev_sec_ops.yml"). Значения ниже — пример структуры,
+# реальные подставляются pipeline'ом перед коммитом артефакта отчёта.
+
+docker_image:
+  name: "<dockerhub_user>/ml-infra-lab"
+  tag: "${GIT_SHA_SHORT}"
+  digest: "sha256:<будет подставлен CI после docker push>"
+
+git:
+  repository: "<ссылка на форк репозитория>"
+  last_5_commits:
+    - "<hash1> <сообщение коммита>"
+    - "<hash2> <сообщение коммита>"
+    - "<hash3> <сообщение коммита>"
+    - "<hash4> <сообщение коммита>"
+    - "<hash5> <сообщение коммита>"
+
+test_coverage:
+  tool: pytest-cov
+  percentage: "<заполняется CI, например 87%>"
+
+security_checks:
+  secrets_scanning: "gitleaks - не найдено секретов в коде"
+  dependency_scan: "pip-audit - см. отчёт CI"

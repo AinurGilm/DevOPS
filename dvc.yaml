@@ -1,0 +1,17 @@
+stages:
+  data_prep:
+    cmd: python -m src.data_prep
+    outs:
+      - data/train.csv
+      - data/test.csv
+  train:
+    cmd: python -m src.train
+    deps:
+      - data/train.csv
+      - data/test.csv
+      - config.ini
+    outs:
+      - models/model.joblib
+    metrics:
+      - models/metrics.json:
+          cache: false

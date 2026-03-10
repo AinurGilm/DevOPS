@@ -1,0 +1,27 @@
+# секреты — никогда не коммитим
+vault/secrets.env
+.env
+*.env
+!*.env.example
+
+# данные и модели (версионируются через DVC)
+/data/*.csv
+/models/*.joblib
+/models/*.json
+!models/.gitkeep
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/
+
+# dvc
+.dvc/cache
+.dvc/tmp
+
+# os / ide
+.DS_Store
+.idea/
+.vscode/
