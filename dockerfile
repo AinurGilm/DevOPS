@@ -1,17 +1,30 @@
+# 1. Обязательно указываем базовый образ
+FROM python:3.11-slim
+
+# 2. Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем зависимости
+# 3. Устанавливаем системные зависимости
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 4. Копируем зависимости и устанавливаем их
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем модели в /app/models/
-COPY models/ ./models/ 
+# 5. Копируем модели (как мы обсуждали)
+COPY models/ ./models/
 
-# Копируем остальной код
+# 6. Копируем остальной код
 COPY . .
 
-# Устанавливаем PYTHONPATH, чтобы импорты из src работали
+# 7. Настройка путей для тестов
 ENV PYTHONPATH=/app
 
-# Запуск тестов
+# 8. Запуск тестов
 RUN pytest tests/
+
+# 9. Команда для запуска приложения
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
