@@ -1,26 +1,17 @@
-# Базовый образ
 FROM python:3.11-slim
 
-# Установка системных зависимостей для сборки
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
+# ... ваши инструкции установки ...
 WORKDIR /app
 
-# Копируем зависимости первыми для кэширования
-COPY requirements.txt .
+# Добавьте эту строку перед запуском тестов
+ENV PYTHONPATH=/app
 
-# Устанавливаем библиотеки (этот слой будет кэшироваться)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Теперь копируем остальной код
 COPY . .
 
-# Запуск тестов
+# Теперь pytest найдет модуль src
 RUN pytest tests/
 
-# Команда запуска
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
