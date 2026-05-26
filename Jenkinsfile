@@ -1,22 +1,31 @@
 pipeline {
     agent any 
 
+    options {
+        // Отключаем автоматический ломающийся чекаут Jenkins
+        skipDefaultCheckout()
+    }
+
     environment {
         DOCKER_IMAGE = "ainurgilm/weight-loss-web:latest"
         DOCKER_CREDS = "dockerhub-credentials-id" 
     }
 
     stages {
-        stage('1. Checkout') {
+        stage('1. Clean & Checkout') {
             steps {
-                checkout scm
+                echo 'Принудительная очистка рабочей папки и свежий клон репозитория...'
+                deleteDir() # Физически стирает всё внутри текущего workspace сборки
+                
+                # Делаем чистый клон репозитория напрямую
+                sh "git clone https://github.com/AinurGilm/DevOPS.git ."
+                sh "git checkout master"
             }
         }
 
         stage('2. Build Docker Image & Run Tests') {
             steps {
-                echo 'Собираем Production Docker-образ и автоматически прогоняем тесты внутри него...'
-                // Docker сам запустит pytest из Dockerfile. Если тесты упадут — сборка завалится здесь.
+                echo 'Собираем Production Docker-образ и автоматически прогоняем тесты...'
                 sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
