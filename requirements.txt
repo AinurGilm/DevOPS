@@ -139,3 +139,10 @@ scikit-learn
 joblib
 httpx
 python-multipart
+fastapi
+uvicorn
+pandas
+scikit-learn
+joblib
+httpx
+python-multipart

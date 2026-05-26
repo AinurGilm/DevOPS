@@ -1,23 +1,22 @@
 import joblib
 import pandas as pd
 
-# загрузка модели
 model = joblib.load("models/model.pkl")
+encoders = joblib.load("models/encoders.pkl")
+features = joblib.load("models/feature_names.pkl")
 
-# пример данных
-sample = pd.DataFrame([{
-    "Age": 25,
-    "Gender": 1,
-    "Group": 0,
-    "Duration_Weeks": 12,
-    "Compliance_Rate": 0.9,
-    "Initial_Body_Fat_Pct": 25.0,
-    "Final_Body_Fat_Pct": 20.0,
-    "Initial_Lean_Mass_kg": 50.0,
-    "Final_Lean_Mass_kg": 53.0,
-    "VO2_Max_Change_Pct": 10.0
-}])
+# Пример данных должен содержать ключи из features
+sample_data = {
+    "Age": 25, "Gender": "Male", "Current Weight (lbs)": 180, 
+    "BMR (Calories)": 2000, "Daily Calories Consumed": 2200, 
+    "Daily Caloric Surplus/Deficit": 200, "Weight Change (lbs)": 0.5, 
+    "Duration (weeks)": 4, "Sleep Quality": "Good", 
+    "Stress Level": "Low", "Final Weight (lbs)": 182
+}
 
-prediction = model.predict(sample)
+df = pd.DataFrame([sample_data])
+for col, le in encoders.items():
+    df[col] = le.transform(df[col])
 
-print("Prediction:", prediction)
+df = df[features]
+print("Prediction:", model.predict(df))

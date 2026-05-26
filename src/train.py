@@ -7,35 +7,32 @@ import os
 
 # 1. Загрузка данных
 data = pd.read_csv("data/data.csv")
-
-# 2. Удаление ID (исправили имя колонки)
 if 'Participant ID' in data.columns:
     data = data.drop(columns=['Participant ID'])
 
-# 3. Выбираем целевую колонку (например, 'Physical Activity Level')
 target_col = 'Physical Activity Level'
 encoder_target = LabelEncoder()
 y = encoder_target.fit_transform(data[target_col])
-
-# 4. Удаляем таргет из признаков
 X = data.drop(columns=[target_col])
 
-# 5. Автоматическое кодирование ВСЕХ текстовых колонок
-# Это исправит вашу ошибку ValueError: 'Good'
+# 2. Кодирование
 encoders = {}
 for col in X.select_dtypes(include=['object']).columns:
     le = LabelEncoder()
     X[col] = le.fit_transform(X[col])
-    encoders[col] = le # Сохраняем энкодер, чтобы использовать в API
+    encoders[col] = le
 
-# 6. Обучение
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# 3. Сохраняем порядок колонок
+feature_names = X.columns.tolist()
+
+# 4. Обучение
 model = RandomForestClassifier()
-model.fit(X_train, y_train)
+model.fit(X, y)
 
-# 7. Сохранение
+# 5. Сохранение
 os.makedirs("models", exist_ok=True)
 joblib.dump(model, "models/model.pkl")
-joblib.dump(encoders, "models/encoders.pkl") # Сохраняем все энкодеры в один файл
+joblib.dump(encoders, "models/encoders.pkl")
+joblib.dump(feature_names, "models/feature_names.pkl") # ВАЖНО
 
-print("MODEL SAVED SUCCESSFULLY")
+print("Модель обучена. Признаки:", feature_names)
