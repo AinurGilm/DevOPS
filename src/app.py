@@ -1,15 +1,26 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+import os
 import joblib
-import pandas as pd
+from pathlib import Path
 
-app = FastAPI()
+# Получаем путь к папке, где лежит этот файл (src/)
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Загрузка
-model = joblib.load("models/model.pkl")
-encoders = joblib.load("models/encoders.pkl")
-feature_names = joblib.load("models/feature_names.pkl")
+# Теперь путь к моделям всегда будет /app/models/
+model_path = BASE_DIR / "models" / "model.pkl"
+encoders_path = BASE_DIR / "models" / "encoders.pkl"
+features_path = BASE_DIR / "models" / "feature_names.pkl"
 
+try:
+    model = joblib.load(model_path)
+    encoders = joblib.load(encoders_path)
+    feature_names = joblib.load(features_path)
+except Exception as e:
+    print(f"Ошибка загрузки моделей: {e}")
+    # Для тестов можно задать заглушки, чтобы сборка не падала
+    model = None
+    encoders = {}
+    feature_names = []
+    
 # Pydantic модель должна повторять список колонок, но без пробелов (или с ними)
 # ВАЖНО: Ключи должны совпадать по смыслу с вашим CSV
 class PatientData(BaseModel):

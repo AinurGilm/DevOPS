@@ -1,19 +1,17 @@
-FROM python:3.11-slim
-
-# ... ваши инструкции установки ...
 WORKDIR /app
 
-# Добавьте эту строку перед запуском тестов
-ENV PYTHONPATH=/app
-
+# Копируем зависимости
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY models/ ./models/
+# Копируем модели в /app/models/
+COPY models/ ./models/ 
 
+# Копируем остальной код
 COPY . .
 
-# Теперь pytest найдет модуль src
-RUN pytest tests/
+# Устанавливаем PYTHONPATH, чтобы импорты из src работали
+ENV PYTHONPATH=/app
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Запуск тестов
+RUN pytest tests/
