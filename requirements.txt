@@ -132,3 +132,10 @@ wcwidth==0.7.0
 yarl==1.24.2
 zc.lockfile==4.0
 httpx
+fastapi
+uvicorn
+pandas
+scikit-learn
+joblib
+httpx
+python-multipart

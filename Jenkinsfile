@@ -1,56 +1,30 @@
 pipeline {
-    agent any 
-
-    options {
-        skipDefaultCheckout()
-    }
-
-    environment {
-        DOCKER_IMAGE = "ainurgilm/weight-loss-web:latest"
-    }
-
+    agent any
     stages {
         stage('1. Clean & Checkout') {
             steps {
-                echo 'Принудительная очистка рабочей папки и свежий клон репозитория...'
-                deleteDir() 
-                sh "git clone https://github.com/AinurGilm/DevOPS.git ."
-                sh "git checkout master"
+                // Очистка только старых файлов, но сохранение структуры git
+                cleanWs()
+                checkout scm
             }
         }
-
         stage('2. Build Docker Image') {
             steps {
-                echo 'Собираем Production Docker-образ...'
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                echo "Собираем Docker-образ..."
+                // Docker сам использует кэш слоев, если Dockerfile написан верно
+                sh 'docker build -t ainurgilm/weight-loss-web:latest .'
             }
         }
-
-        stage('3. Push to DockerHub via Vault') {
+        stage('3. Push to DockerHub') {
             steps {
-                echo 'Забираем пароль из Vault и отправляем образ...'
-                withVault(
-                    vaultUrl: 'http://localhost:8200', 
-                    vaultSecrets: [[
-                        path: 'secret/data/dockerhub-creds',
-                        engineVersion: 2, 
-                        secretValues: [[envVar: 'DOCKER_PASSWORD', vaultKey: 'password']]
-                    ]]
-                ) {
-                    // Используем переменную, полученную из Vault
-                    sh "echo ${DOCKER_PASSWORD} | docker login -u ainurgilm --password-stdin"
-                    sh "docker push ${DOCKER_IMAGE}"
-                }
+                echo "Pushing to DockerHub..."
+                sh 'docker push ainurgilm/weight-loss-web:latest'
             }
         }
     }
-    
     post {
-        success {
-            echo '🎉 Пайплайн успешно завершен! Образ в DockerHub обновлен.'
-        }
         failure {
-            echo '❌ Сборка упала. Проверьте логи.'
+            echo "❌ Сборка упала. Проверьте логи."
         }
     }
 }
