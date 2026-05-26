@@ -131,3 +131,4 @@ voluptuous==0.16.0
 wcwidth==0.7.0
 yarl==1.24.2
 zc.lockfile==4.0
+httpx
