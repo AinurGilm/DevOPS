@@ -1,0 +1,4 @@
+DB_USER=ainur_devops
+DB_PASSWORD=my_secure_password_2026
+DB_NAME=ml_predictions
+venv/
