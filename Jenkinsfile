@@ -15,9 +15,10 @@ pipeline {
         stage('1. Clean & Checkout') {
             steps {
                 echo 'Принудительная очистка рабочей папки и свежий клон репозитория...'
-                deleteDir() # Физически стирает всё внутри текущего workspace сборки
+                // Физически стирает всё внутри текущего workspace сборки
+                deleteDir() 
                 
-                # Делаем чистый клон репозитория напрямую
+                // Делаем чистый клон репозитория напрямую
                 sh "git clone https://github.com/AinurGilm/DevOPS.git ."
                 sh "git checkout master"
             }
