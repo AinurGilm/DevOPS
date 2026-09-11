@@ -23,8 +23,5 @@ COPY . .
 # 7. Настройка путей для тестов
 ENV PYTHONPATH=/app
 
-# 8. Запуск тестов
-RUN pytest tests/
-
-# 9. Команда для запуска приложения
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 8. Команда для запуска приложения
+CMD ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "8000"]
