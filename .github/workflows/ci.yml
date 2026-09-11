@@ -1,4 +1,4 @@
-name: CI - build & push docker image1
+name: CI - build & push docker image11
 
 # Переиспользуется во всех 4 лабораторных работах без изменений
 on:
