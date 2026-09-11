@@ -1,10 +1,8 @@
-name: ML Infrastructure CI
-
+name: ML Infrastructure CI1
 on:
-  push:
-    branches: [ "main", "develop" ]
-  pull_request:
-    branches: [ "main" ]
+     workflow_dispatch:  # <-- ЭТА СТРОЧКА ПОЗВОЛЯЕТ ЗАПУСКАТЬ ВРУЧНУЮ
+     push:
+       branches: [ "main", "master" ]
 
 jobs:
   test-and-build:
