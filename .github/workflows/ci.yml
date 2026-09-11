@@ -1,4 +1,3 @@
-```yaml
 name: CI
 
 on:
@@ -15,7 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Проверяем, что секреты существуют
       - name: Check secrets
         env:
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -30,7 +28,6 @@ jobs:
 
           echo "Secrets are configured"
 
-      # Проверяем доступ к Vault
       - name: Check Vault
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
@@ -43,14 +40,12 @@ jobs:
           echo
           echo "Vault connection OK"
 
-      # DockerHub
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Build + push
       - name: Build and push image
         uses: docker/build-push-action@v7
         with:
@@ -60,4 +55,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:${{ github.sha }}
-```
