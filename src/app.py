@@ -1,6 +1,7 @@
 import os
 import joblib
 from pathlib import Path
+from pydantic import BaseModel
 
 # Получаем путь к папке, где лежит этот файл (src/)
 BASE_DIR = Path(__file__).resolve().parent.parent
