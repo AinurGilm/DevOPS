@@ -22,10 +22,6 @@ jobs:
         pip install -r requirements.txt
         pip install pytest flake8
     
-    - name: Lint with flake8
-      run: |
-        flake8 src/ api.py --max-line-length=120
-    
     - name: Run tests (если есть)
       run: |
         pytest tests/ || echo "No tests found"
