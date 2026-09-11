@@ -1,67 +1,63 @@
-name: CI - build & push docker image
+```yaml
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      # Проверяем, что секреты существуют
+      - name: Check secrets
+        env:
+          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          test -n "$DOCKER_USER" || (echo "DOCKERHUB_USERNAME is missing" && exit 1)
+          test -n "$DOCKER_TOKEN" || (echo "DOCKERHUB_TOKEN is missing" && exit 1)
+          test -n "$VAULT_ADDR" || (echo "VAULT_ADDR is missing" && exit 1)
+          test -n "$VAULT_TOKEN" || (echo "VAULT_TOKEN is missing" && exit 1)
+
+          echo "Secrets are configured"
+
+      # Проверяем доступ к Vault
+      - name: Check Vault
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          curl -fsS \
+            -H "X-Vault-Token: $VAULT_TOKEN" \
+            "$VAULT_ADDR/v1/auth/token/lookup-self"
+
+          echo
+          echo "Vault connection OK"
+
+      # DockerHub
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
         with:
-          python-version: "3.11"
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run unit tests
-        run: pytest tests/ -v --junitxml=test-results.xml
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: test-results.xml
-
-  build-and-push:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 10
-
-      - name: Set short SHA
-        id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Build and push model-api image
-        uses: docker/build-push-action@v5
+      # Build + push
+      - name: Build and push image
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:${{ steps.vars.outputs.sha_short }}
             ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:latest
-
-      - name: Build and push consumer image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/Dockerfile.consumer
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab-consumer:${{ steps.vars.outputs.sha_short }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab-consumer:latest
-
-      - name: Generate dev_sec_ops.yml metadata
-        run: |
-          git log -5 --pretty=format:'  - "%h %s"' > last_commits.txt
-          echo "Собранный образ: ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:${{ steps.vars.outputs.sha_short }}"
-          cat last_commits.txt
+            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:${{ github.sha }}
+```
