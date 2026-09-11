@@ -1,30 +1,39 @@
-import os
+```python
 import joblib
+import pandas as pd
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Получаем путь к папке, где лежит этот файл (src/)
+
+# Создаём FastAPI приложение
+app = FastAPI()
+
+
+# Получаем путь к корню проекта
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Теперь путь к моделям всегда будет /app/models/
+# Пути к моделям
 model_path = BASE_DIR / "models" / "model.pkl"
 encoders_path = BASE_DIR / "models" / "encoders.pkl"
 features_path = BASE_DIR / "models" / "feature_names.pkl"
 
+
+# Загружаем модели
 try:
     model = joblib.load(model_path)
     encoders = joblib.load(encoders_path)
     feature_names = joblib.load(features_path)
 except Exception as e:
     print(f"Ошибка загрузки моделей: {e}")
-    # Для тестов можно задать заглушки, чтобы сборка не падала
+
+    # Заглушки для запуска тестов,
+    # если файлы моделей отсутствуют
     model = None
     encoders = {}
     feature_names = []
-    
-# Pydantic модель должна повторять список колонок, но без пробелов (или с ними)
-# ВАЖНО: Ключи должны совпадать по смыслу с вашим CSV
+
+
 class PatientData(BaseModel):
     Age: float
     Gender: str
@@ -38,23 +47,38 @@ class PatientData(BaseModel):
     Stress_Level: str
     Final_Weight_lbs: float
 
+
+@app.get("/")
+def home():
+    return {"status": "OK"}
+
+
 @app.post("/predict")
 def predict(item: PatientData):
     try:
-        data_dict = item.dict()
+        if model is None:
+            raise RuntimeError("Модель не загружена")
+
+        data_dict = item.model_dump()
         df = pd.DataFrame([data_dict])
-        
-        # Приводим имена к виду CSV (пробелы вместо подчеркиваний)
-        df.columns = [c.replace('_', ' ') for c in df.columns]
-        
-        # Кодируем
+
+        # Приводим имена колонок к формату CSV
+        df.columns = [column.replace("_", " ") for column in df.columns]
+
+        # Кодируем категориальные признаки
         for col, le in encoders.items():
             df[col] = le.transform(df[col])
-        
-        # СТРОГИЙ ПОРЯДОК:
+
+        # Соблюдаем порядок признаков модели
         df = df[feature_names]
-        
+
         prediction = model.predict(df)
+
         return {"prediction": int(prediction[0])}
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Ошибка: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ошибка: {str(e)}",
+        )
+```
