@@ -46,6 +46,3 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/ml-infra-lab:${{ github.sha }}
