@@ -24,14 +24,9 @@ encoders = joblib.load(encoders_path)
 feature_names = joblib.load(features_path)
 except Exception as e:
 print(f"Ошибка загрузки моделей: {e}")
-
-```
-# Заглушки, чтобы приложение могло импортироваться,
-# даже если файлы моделей отсутствуют
 model = None
 encoders = {}
 feature_names = []
-```
 
 class PatientData(BaseModel):
 Age: float
@@ -67,7 +62,7 @@ raise RuntimeError("Модель не загружена")
     for col, le in encoders.items():
         df[col] = le.transform(df[col])
 
-    # Соблюдаем порядок признаков модели
+    # Соблюдаем порядок признаков
     df = df[feature_names]
 
     prediction = model.predict(df)
