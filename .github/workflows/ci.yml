@@ -1,7 +1,8 @@
-name: CI - build & push docker image11
+name: CI - build & push docker image
 
-# Переиспользуется во всех 4 лабораторных работах без изменений
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
