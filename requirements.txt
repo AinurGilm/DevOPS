@@ -141,6 +141,7 @@ httpx
 python-multipart
 fastapi
 uvicorn
+psycopg2-binary
 pandas
 scikit-learn
 joblib
