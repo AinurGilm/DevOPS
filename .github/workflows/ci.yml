@@ -27,19 +27,7 @@ jobs:
           test -n "$VAULT_TOKEN" || (echo "VAULT_TOKEN is missing" && exit 1)
 
           echo "Secrets are configured"
-
-      - name: Check Vault
-        env:
-          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
-          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
-        run: |
-          curl -fsS \
-            -H "X-Vault-Token: $VAULT_TOKEN" \
-            "$VAULT_ADDR/v1/auth/token/lookup-self"
-
-          echo
-          echo "Vault connection OK"
-
+          
       - name: Build and push image
         uses: docker/build-push-action@v7
         with:
