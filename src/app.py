@@ -6,27 +6,24 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Путь к корню проекта
-
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Пути к моделям
 
 model_path = BASE_DIR / "models" / "model.pkl"
 encoders_path = BASE_DIR / "models" / "encoders.pkl"
 features_path = BASE_DIR / "models" / "feature_names.pkl"
 
-# Загрузка моделей
-
-try:
-model = joblib.load(model_path)
-encoders = joblib.load(encoders_path)
-feature_names = joblib.load(features_path)
-except Exception as e:
-print(f"Ошибка загрузки моделей: {e}")
 model = None
 encoders = {}
 feature_names = []
+
+if model_path.exists():
+model = joblib.load(model_path)
+
+if encoders_path.exists():
+encoders = joblib.load(encoders_path)
+
+if features_path.exists():
+feature_names = joblib.load(features_path)
 
 class PatientData(BaseModel):
 Age: float
@@ -55,15 +52,16 @@ raise RuntimeError("Модель не загружена")
     data_dict = item.model_dump()
     df = pd.DataFrame([data_dict])
 
-    # Приводим имена колонок к формату CSV
-    df.columns = [column.replace("_", " ") for column in df.columns]
+    df.columns = [
+        column.replace("_", " ")
+        for column in df.columns
+    ]
 
-    # Кодируем категориальные признаки
-    for col, le in encoders.items():
-        df[col] = le.transform(df[col])
+    for col, encoder in encoders.items():
+        df[col] = encoder.transform(df[col])
 
-    # Соблюдаем порядок признаков
-    df = df[feature_names]
+    if feature_names:
+        df = df[feature_names]
 
     prediction = model.predict(df)
 
